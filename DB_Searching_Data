@@ -1,0 +1,178 @@
+unit Unit1;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls, Grids, DBGrids, Provider, DB, DBClient, ADODB, Menus,
+  ExtCtrls;
+
+type
+  TForm1 = class(TForm)
+    ADOConnection1: TADOConnection;
+    ADOQuery1: TADOQuery;
+    dsDBList: TClientDataSet;
+    SourDBList: TDataSource;
+    DataSetProvider1: TDataSetProvider;
+    DBGrid1: TDBGrid;
+    Label1: TLabel;
+    edtServerName: TEdit;
+    btnConnect: TButton;
+    btnDBListSearch: TButton;
+    ADOConnection2: TADOConnection;
+    ADOQuery2: TADOQuery;
+    DataSetProvider2: TDataSetProvider;
+    dsSearch: TClientDataSet;
+    SourSearch: TDataSource;
+    btnSearch: TButton;
+    DBGrid2: TDBGrid;
+    Label2: TLabel;
+    edtQueryLike_1: TEdit;
+    Label3: TLabel;
+    Memo: TMemo;
+    edtQueryLike_2: TEdit;
+    chkLike_1: TCheckBox;
+    chkLike_2: TCheckBox;
+    edtQueryLike_3: TEdit;
+    edtQueryLike_4: TEdit;
+    chkLike_3: TCheckBox;
+    chkLike_4: TCheckBox;
+    RadAndOr: TRadioGroup;
+    lbCount: TLabel;
+    lbResultCount: TLabel;
+    procedure FormShow(Sender: TObject);
+    procedure btnConnectClick(Sender: TObject);
+    procedure btnDBListSearchClick(Sender: TObject);
+    procedure btnSearchClick(Sender: TObject);
+  private
+    procedure Search_Query; 
+  public
+    { Public declarations }
+  end;
+
+var
+  Form1: TForm1;
+
+implementation
+
+{$R *.dfm}
+
+procedure TForm1.FormShow(Sender: TObject);
+begin
+  ADOConnection1.Connected := False;
+  ADOConnection2.Connected := False;
+end;
+
+procedure TForm1.btnConnectClick(Sender: TObject);
+begin
+  ADOConnection1.ConnectionString := 'Provider=SQLOLEDB.1;Password=data60;Persist Security Info=True;User ID=sa;Initial Catalog=master;'
+                                   + 'Data Source=' + edtServerName.Text + ';';
+
+  ADOConnection1.Connected := True;
+end;
+
+procedure TForm1.btnDBListSearchClick(Sender: TObject);
+var sql: String;
+begin
+  sql := 'select name '
+       +      'from sysdatabases '
+       +     'where status & 512 = 0'  // status�� 512�� �ƴ� �����ͺ��̽��� ������ (�¶��� ����) '
+       +       'and len(name) = 6 '
+       +       'and name not like "RJ_%" '
+       +       'and name not like "AJ_%" '
+       +       'and name not in ("tempdb", "master") '
+       +  'order by name ';
+  sql := StringReplace(sql, '"', '''', [rfReplaceAll]);
+  dsDBList.Close;
+  dsDBList.CommandText := sql;
+  dsDBList.Open;
+
+  lbCount.Caption := IntToStr(dsDBList.RecordCount);
+end;
+
+procedure TForm1.btnSearchClick(Sender: TObject);
+var
+  strServerName, strDBName, strName: String;
+  intTotalCount: Integer;
+begin
+  Memo.Clear;
+
+  dsDBList.First;
+
+  while not dsDBList.Eof do
+    begin
+      strServerName := edtServerName.Text;
+      strDBName     := dsDBList.FieldByName('name').AsString;
+
+
+      ADOConnection2.Connected := False;
+      ADOConnection2.ConnectionString := 'Provider=SQLOLEDB.1;Password=data60;Persist Security Info=True;User ID=sa;Initial '
+                                       + 'Catalog=' + strDBName + ';'
+                                       + 'Data Source=' + strServerName + ';';
+      try
+        ADOConnection2.Connected := True;
+      except
+        Memo.Lines.Add(strServerName + ' ' + strDBName + ' - ' + 'DB������з� �ǳʶ�');
+        dsDBList.Next;
+      end;
+
+      Search_Query;
+      if dsSearch.RecordCount > 0 then
+        begin
+          intTotalCount := intTotalCount + dsSearch.RecordCount;
+
+          Memo.Lines.Add(strServerName + ' ' + strDBName + ' [' + IntToStr(dsSearch.RecordCount) + ']');
+
+          dsSearch.First;
+          while not dsSearch.Eof do
+            begin
+              strName := dsSearch.FieldByName('name').AsString;
+              Memo.Lines.Add(strName);
+
+              if dsSearch.RecordCount = dsSearch.RecNo then Memo.Lines.Add('�������������������������������������');
+
+              dsSearch.Next;
+            end;
+        end;
+
+      if dsDBList.RecordCount = dsDBList.RecNo then
+        begin
+          ADOConnection1.Connected := False;
+          ADOConnection2.Connected := False;
+
+          ShowMessage('�۾� �Ϸ� && ���� ���� ����');
+        end;
+
+      dsDBList.Next;
+    end;
+
+  lbResultCount.Caption := IntToStr(intTotalCount);
+end;
+
+procedure TForm1.Search_Query;
+var sql, strAndOr: String;
+begin
+  case RadAndOr.ItemIndex of
+    0: strAndOr := 'and ';
+    1: strAndOr := 'or ';
+  end;
+
+//  sql := 'select O.name, C.* '
+  sql := 'select distinct O.name '
+       +      'from syscomments C, sysobjects O '
+       +     'where C.id = O.id '
+       +       'and (C.text like "%' + edtQueryLike_1.Text + '%" ';
+
+  if chkLike_2.Checked then sql := sql + strAndOr + 'text like "%' + edtQueryLike_2.Text + '%" ';
+  if chkLike_3.Checked then sql := sql + strAndOr + 'text like "%' + edtQueryLike_3.Text + '%" ';
+  if chkLike_4.Checked then sql := sql + strAndOr + 'text like "%' + edtQueryLike_4.Text + '%" ';
+
+  sql := sql + ')';
+
+  sql := StringReplace(sql, '"', '''', [rfReplaceAll]);
+  dsSearch.Close;
+  dsSearch.CommandText := sql;
+  dsSearch.Open;
+end;
+
+end.
