@@ -1,0 +1,157 @@
+unit Unit1;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, ExtCtrls, StdCtrls, Grids, DBGrids, DB, DBClient, Provider,
+  ADODB, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdHTTP,
+  IdMessage, IdMessageClient, IdSMTP;
+
+type
+  TMainFrm = class(TForm)
+    ADOConnection1: TADOConnection;
+    DataSetProvider1: TDataSetProvider;
+    dsExchange: TClientDataSet;
+    sourExchange: TDataSource;
+    grdSearch: TDBGrid;
+    Label1: TLabel;
+    Label2: TLabel;
+    Label3: TLabel;
+    Timer: TTimer;
+    IdHTTP: TIdHTTP;
+    mmResult: TMemo;
+    BtnOperation: TButton;
+    ADOQuery1: TADOQuery;
+    IdSMTP: TIdSMTP;
+    IdMessage: TIdMessage;
+    procedure FormShow(Sender: TObject);
+
+    procedure BtnOperationClick(Sender: TObject);
+
+    procedure TimerTimer(Sender: TObject);
+  private
+    function ReceiveGmTaxinvoiceData: Boolean;
+
+    procedure SendMail(AEmailAdress, AExchangeID: String);
+  public
+    { Public declarations }
+  end;
+
+var
+  MainFrm: TMainFrm;
+
+implementation
+
+{$R *.dfm}
+
+procedure TMainFrm.FormShow(Sender: TObject);
+begin
+  Timer.Enabled := False;
+
+  Timer.Interval := 1000 * 60 * 60; //1�ð�
+
+  IdHTTP.Request.Host        := 'http://api.makebill.co.kr/';
+  IdHTTP.Request.ContentType := 'Application/x-WWW-Form-urlencoded';
+  IdHTTP.Request.Connection  := 'Close';
+
+  mmResult.Clear;
+
+  Self.Height := 195;
+  Self.Width  := 460;
+  Self.WindowState := wsMinimized;
+
+  Timer.Enabled := True;
+end;
+procedure TMainFrm.BtnOperationClick(Sender: TObject);
+begin
+  BtnOperation.Enabled := False;
+
+  TimerTimer(nil);
+
+  BtnOperation.Enabled := True;
+end;
+
+function TMainFrm.ReceiveGmTaxinvoiceData: Boolean;
+var sql: String;
+begin
+  sql := 'select * '
+       +      'from tax_exchange '
+       +     'where send_company_code = "GM_001" '
+       +       'and esero_ilja >= "' + FormatDateTime('yyyy-mm-dd', Now) + '" '
+       +  'order by exchange_id ';
+  sql := StringReplace(sql, '"', '''', [rfReplaceAll]);
+  dsExchange.Close;
+  dsExchange.CommandText := sql;
+  try
+    dsExchange.Open;
+    if dsExchange.RecordCount = 0 then Result := False
+                                  else Result := True;
+  except
+    Result := False;
+  end;
+end;
+
+procedure TMainFrm.TimerTimer(Sender: TObject);
+const
+  searchAPI = 'http://api.makebill.co.kr/?no=107&sid=gimaek&authkey=sd1ksj78jhu2&rfid=';
+var
+  getData, resultValue, exchangeIdList: String;
+begin
+  if ReceiveGmTaxinvoiceData then
+    begin
+      mmResult.Lines.Add(FormatDateTime('hh:mm:ss', Now));
+
+      dsExchange.First;
+      while not dsExchange.Eof do
+        begin
+          getData     := searchAPI + dsExchange.FieldByName('exchange_id').AsString;
+          resultValue := IdHTTP.Get(getData);
+
+          if Pos('data_not_found', resultValue) = 0 then
+            begin
+              exchangeIdList := exchangeIdList + '    ' + dsExchange.FieldByName('exchange_id').AsString;
+
+              mmResult.Lines.Add(dsExchange.FieldByName('exchange_id').AsString);
+            end;
+
+          dsExchange.Next;
+        end;
+
+      if exchangeIdList <> '' then SendMail('audi799@gimaek.net', exchangeIdList);
+    end;
+end;
+
+procedure TMainFrm.SendMail(AEmailAdress, AExchangeID: String);
+var
+  txtpart, htmpart: TIdText;
+begin
+  IdSMTP.Host               := 'smart.whoismail.net';
+  IdSMTP.AuthenticationType := atLogin;  {atNone : �������ʿ�, atLogin : �����ʿ�. �ε�..?}
+  IdSMTP.Username           := 'tax@gimaek.kr';
+  IdSMTP.Password           := 'gimaek^1204';
+  IdSMTP.Port               := 587;
+
+  idMessage.ContentType               := 'multipart/mixed; charset=UTF-8';
+  idMessage.Encoding                  := meMIME;
+  idMessage.CharSet                   := 'UTF-8';
+  IdMessage.From.Address              := 'tax@gimaek.kr';
+  IdMessage.From.Name                 := 'GIMAEKtax';
+  IdMessage.Recipients.EMailAddresses := AEmailAdress;
+  IdMessage.Subject                   := 'GM_001��꼭 ����ũ�����ε� ����';
+
+  idMessage.MessageParts.Clear;
+
+  txtpart := TIdText.Create(IdMessage.MessageParts);
+  txtpart.ContentType := 'text/plain';
+
+  htmpart := TIdText.Create(IdMessage.MessageParts);
+  htmpart.Body.Add(AExchangeID);
+  htmpart.ContentType := 'text/html';
+
+  IdSMTP.Connect;
+  IdSMTP.Send(IdMessage);
+  IdSMTP.Disconnect;
+end;
+
+end.
