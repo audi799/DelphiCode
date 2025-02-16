@@ -128,15 +128,15 @@ var
 begin
   IdSMTP.Host               := 'smart.whoismail.net';
   IdSMTP.AuthenticationType := atLogin;  {atNone : �������ʿ�, atLogin : �����ʿ�. �ε�..?}
-  IdSMTP.Username           := 'tax@gimaek.kr';
-  IdSMTP.Password           := 'gimaek^1204';
+  IdSMTP.Username           := 'tax@gi****.kr';
+  IdSMTP.Password           := 'gi****^1204';
   IdSMTP.Port               := 587;
 
   idMessage.ContentType               := 'multipart/mixed; charset=UTF-8';
   idMessage.Encoding                  := meMIME;
   idMessage.CharSet                   := 'UTF-8';
-  IdMessage.From.Address              := 'tax@gimaek.kr';
-  IdMessage.From.Name                 := 'GIMAEKtax';
+  IdMessage.From.Address              := 'tax@gi****.kr';
+  IdMessage.From.Name                 := 'GI****tax';
   IdMessage.Recipients.EMailAddresses := AEmailAdress;
   IdMessage.Subject                   := 'GM_001��꼭 ����ũ�����ε� ����';
 
