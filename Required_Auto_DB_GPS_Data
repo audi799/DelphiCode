@@ -1,0 +1,169 @@
+unit Unit1;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, ExtCtrls, StdCtrls, DBClient, Provider, DB, ADODB, Grids,
+  DBGrids, IdComponent, IdTCPConnection, IdTCPClient, IdMessageClient,
+  IdSMTP, IdBaseComponent, IdMessage;
+
+type
+  TMain = class(TForm)
+    ADOConnection1: TADOConnection;
+    ADOQuery1: TADOQuery;
+    DataSetProvider1: TDataSetProvider;
+    dsUpdate: TClientDataSet;
+    Label1: TLabel;
+    Label2: TLabel;
+    Label3: TLabel;
+    Label4: TLabel;
+    btnOperation: TButton;
+    Timer: TTimer;
+    Memo: TMemo;
+    IdMessage: TIdMessage;
+    IdSMTP: TIdSMTP;
+    procedure FormCreate(Sender: TObject);
+    procedure TimerTimer(Sender: TObject);
+    procedure btnOperationClick(Sender: TObject);
+  private
+    sendedMailCnt: Integer;
+
+    function updateHyeonjangData: Boolean;
+    procedure send_mail(errorTItle: String);
+  public
+    { Public declarations }
+  end;
+
+var
+  Main: TMain;
+
+implementation
+
+{$R *.dfm}
+
+procedure TMain.FormCreate(Sender: TObject);
+begin
+  sendedMailCnt := 0;
+
+  Timer.Enabled  := False;
+  Timer.Interval := 1000 * 120;
+  Timer.Enabled  := True;
+end;
+
+procedure TMain.TimerTimer(Sender: TObject);
+begin
+  btnOperation.Click;
+end;
+
+procedure TMain.btnOperationClick(Sender: TObject);
+begin
+  if updateHyeonjangData then
+    begin
+      Memo.Lines.Add(FormatDateTime('hh:mm:ss', Now) + ' Update Hyeonjang SUCC');
+      sendedMailCnt := 0;
+    end
+  else
+    begin
+      if sendedMailCnt < 10 then send_mail('RM_321������ǥ������Ʈ����');
+      Memo.Lines.Add(FormatDateTime('hh:mm:ss', Now) + ' Update Hyeonjang ERR');
+    end
+end;
+
+function TMain.updateHyeonjangData: Boolean;
+var sql: String;
+begin
+{  content �ʵ� �� ���� (Json)
+  {"CompanyCode":"RM_321","InvoiceYmd":"2023-06-28","InvoiceNo":"3","InvoicePlanNo":"11","Lat":36.930008,"Lng":127.777919}
+  {"CompanyCode":"RM_321","InvoiceYmd":"2023-06-28","InvoiceNo":"17","InvoicePlanNo":"6","Lat":36.92475,"Lng":127.730042}
+  {"CompanyCode":"RM_321","InvoiceYmd":"2023-06-28","InvoiceNo":"7","InvoicePlanNo":"10","Lat":36.911421,"Lng":127.613523}
+}
+  sql := 'select *, '
+       +        'convert(varchar(10), IssueTime, 120) ymd, '
+       +        'substring(content, '
+       +           'charindex(''"InvoicePlanNo"'', content, 1) + len(''"InvoicePlanNo"'') + 2, '
+       +           'charindex(''"Lat"'', content, 1) - (charindex(''"InvoicePlanNo"'', content, 1) + len(''"InvoicePlanNo"'')) - 4) as chulha_plan_no, '
+
+       +        'substring(content, '
+       +           'charindex(''"Lat"'', content, 1) + len(''"Lat"'') + 1, '
+       +                  'charIndex(''"Lng"'', content, 1) - (charindex(''"Lat"'', content, 1) + len(''"Lat"'') + 2)) as Lat, '
+
+       +        'substring(content, '
+       +           'charindex(''"Lng"'', content, 1) + len(''"Lng"'') + 1, '
+       +                  'charindex(''}'', content, 1) - (charindex(''"Lng"'', content, 1) + len(''"Lng"'') + 1)) as Lng '
+       +      'into #tmp_01 '
+       +      'from Dbser1.RemiconRadio.dbo.rr_event '
+       +     'where companycode = ''RM_321'' '
+       +       'and issuetime >= ''' + FormatDateTime('yyyy-mm-dd', Now) + ''' '
+       +       'and EventType = ''ReportSiteLocation'' '
+
+       + 'select ymd, chulha_plan_no, avg(cast(Lat as numeric(18,15))) Lat, avg(cast(Lng as numeric(18,15))) Lng '
+       +      'into #tmp_02 '
+       +      'from #tmp_01 '
+       +  'group by ymd, chulha_plan_no '
+
+       + 'select P.cust_code, P.hyeonjang_code, avg(T.Lat) Lat, avg(T.Lng) Lng '
+       +      'into #tmp_03 '
+       +      'from yu_chulha_plan P, #tmp_02 T '
+       +     'where P.ymd = ''' + FormatDateTime('yyyy-mm-dd', Now) + ''' '
+       +       'and T.ymd = P.ymd '
+       +       'and T.chulha_plan_no = P.nno '
+       +  'group by P.cust_code, P.hyeonjang_code '
+
+       + 'if (select count(*) cnt '
+       +      'from cm_hyeonjang H, #tmp_03 T '
+       +     'where H.cust_code = T.cust_code '
+       +       'and H.hyeonjang_code = T.hyeonjang_code '
+       +       'and (H.Lat <> T.Lat or H.Lng <> T.Lng)) > 0 '
+       + 'begin '  // ������Ʈ�Ұ��������� ������Ʈ����!
+       + 'update cm_hyeonjang set Lat = T.Lat, Lng = T.Lng '
+       +      'from cm_hyeonjang H, #tmp_03 T '
+       +     'where H.cust_code = T.cust_code '
+       +       'and H.hyeonjang_code = T.hyeonjang_code '
+       +       'and (H.Lat <> T.Lat or H.Lng <> T.Lng) '
+       + 'end '
+
+       + 'drop table #tmp_01 '
+       + 'drop table #tmp_02 '
+       + 'drop table #tmp_03 ';
+
+  dsUpdate.Close;
+  dsUpdate.CommandText := sql;
+  try
+    dsUpdate.Execute;
+    Result := True;
+  except
+    Result := False;
+  end;
+end;
+
+procedure TMain.send_mail(errorTItle: String);
+begin
+  try
+    IdSMTP.Host                         := 'smart.whoismail.net';
+    IdSMTP.AuthenticationType           := atLogin;
+    IdSMTP.Username                     := 'tax@gimaek.kr';
+    IdSMTP.Password                     := 'gimaek^1204';
+    IdSMTP.Port                         := 25;
+
+    idMessage.ContentType               :='multipart/mixed; charset=UTF-8';
+    idMessage.Encoding                  := meMIME;
+  //  MIME(Multipart Internet Mail Extensions) : �ϳ��� ���Ͼȿ� ��������,����,������,÷������ ���� ����Ÿ�� ��� �о� �ְ� �����ϴ� ���.
+
+    IdMessage.From.Address              := 'tax@gimaek.kr';        //�����»������.
+    IdMessage.From.Name                 := 'GIMAEK';               //�����»��.
+    IdMessage.Recipients.EMailAddresses := 'audi799@gimaek.net';   //�޴»��(����).
+
+    IdMessage.Body.Text                 := WideString(errorTItle);
+    IdMessage.Subject                   := WideString(errorTItle);
+    IdSMTP.Connect;
+    IdSMTP.Send(IdMessage);
+    IdSMTP.Disconnect;
+
+    sendedMailCnt := sendedMailCnt + 1;
+  except
+    //Self.Close;
+  end;
+end;
+
+end.
