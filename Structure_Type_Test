@@ -1,0 +1,56 @@
+unit Unit1;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls;
+
+type
+  TForm1 = class(TForm)
+    Button1: TButton;
+    procedure Button1Click(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  Form1: TForm1;
+
+implementation
+
+{$R *.dfm}
+
+procedure TForm1.Button1Click(Sender: TObject);
+type
+  rDaegwang = record
+    STX: Char;
+    Hogi: array[1..2] of Char;
+    AbillityNo: array[1..2] of Char;
+    StartAddress: array[1..4] of Char;
+    DefaultData_1: array[1..4] of Char;
+    DefaultData_2: array[1..2] of Char;
+    NowOndo: array[1..4] of Char;
+    BeforeOndo: array[1..4] of Char;
+    AverageOndo: array[1..4] of Char;
+    Count: array[1..4] of Char;
+    CRCData: array[1..4] of Char;
+    ETX: Char;
+  end;
+var
+  ss: TStringStream;
+  Daegwang: rDaegwang;
+  strData: String;
+  douVal: Double;
+begin
+  strData := '00160000000408000000140013000705C3'; //��ȣ������������
+
+  ss := TStringStream.Create(strData);
+  ss.ReadBuffer(Daegwang, 36);
+
+  ShowMessage(Daegwang.BeforeOndo);
+end;
+
+end.
