@@ -1,0 +1,59 @@
+unit Unit1;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls, IdBaseComponent, IdComponent, IdTCPConnection,
+  IdTCPClient, IdHTTP;
+
+type
+  TForm1 = class(TForm)
+    Button1: TButton;
+    IdHTTP: TIdHTTP;
+    procedure Button1Click(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  Form1: TForm1;
+
+implementation
+
+{$R *.dfm}
+
+procedure TForm1.Button1Click(Sender: TObject);
+var jsonData: String;
+    strApi: String;
+    sucUrl: String;
+
+    returnValue: String;
+begin
+  strApi := 'http://api.gimaek.kr/EX.aspx?APINO=100&C=HR_613&T=hc_batch_10&BatchData=';
+
+  jsonData := '[{"B_DATE":"2022-01-01",'
+            + '"B_SERNO":"4",'
+            + '"B_BATCH":"1",'
+            + '"B_TIME":"12:00",'
+            + '"B_TRUCK":"1234",'
+            + '"B_PLACE":"���������������",'
+            + '"B_ITEM":"1234",'
+            + '"B_QTY":"3",'
+            + '"B_BATCH_CNT":"2",'
+            + '"B_QcCode":"33"'
+            + '}]';
+
+  sucUrl := UTF8Encode(strApi + jsonData);
+
+  returnValue := IdHTTP.Get(sucUrl);
+  ShowMessage(returnValue);
+end;
+
+end.
+
+
+
+
