@@ -51,7 +51,7 @@ begin
 
   Timer.Interval := 1000 * 60 * 60; //1�ð�
 
-  IdHTTP.Request.Host        := 'http://api.makebill.co.kr/';
+  IdHTTP.Request.Host        := 'http://api.make****.co.kr/';
   IdHTTP.Request.ContentType := 'Application/x-WWW-Form-urlencoded';
   IdHTTP.Request.Connection  := 'Close';
 
@@ -94,7 +94,7 @@ end;
 
 procedure TMainFrm.TimerTimer(Sender: TObject);
 const
-  searchAPI = 'http://api.makebill.co.kr/?no=107&sid=gimaek&authkey=sd1ksj78jhu2&rfid=';
+  searchAPI = 'http://api.make****.co.kr/?no=107&sid=gimaek&authkey=sd1ksj78jhu2&rfid=';
 var
   getData, resultValue, exchangeIdList: String;
 begin
