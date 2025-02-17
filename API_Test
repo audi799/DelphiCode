@@ -32,7 +32,7 @@ var jsonData: String;
 
     returnValue: String;
 begin
-  strApi := 'http://api.gimaek.kr/EX.aspx?APINO=100&C=HR_613&T=hc_batch_10&BatchData=';
+  strApi := 'http://api.gi****.kr/EX.aspx?APINO=100&C=HR_613&T=hc_batch_10&BatchData=';
 
   jsonData := '[{"B_DATE":"2022-01-01",'
             + '"B_SERNO":"4",'
