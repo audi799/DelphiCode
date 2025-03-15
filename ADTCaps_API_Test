@@ -72,14 +72,14 @@ begin
 
 
   kindOfApi := 'reqCarInfo'; //�ǽð�����
-//  sRequest := '{"authKey": "0x0100000060D62AC87E7A9D69365120C7937384E3A337F02561D9232A54A4DA38FD830D10", "reqTyp":"a" }'; //�������
-  sRequest := '{"authKey": "0x0100000060D62AC87E7A9D69365120C7937384E3A337F02561D9232A54A4DA38FD830D10", "reqTyp":"s", "spotNm":"��ƾƽ����ֽ�ȸ��" }'; //������
+//  sRequest := '{"authKey": "0x0100000060D62AC87E7A9D69365120C7937384E3A337F02561D9232A54A4DA38FD830D**", "reqTyp":"a" }'; //�������
+  sRequest := '{"authKey": "0x0100000060D62AC87E7A9D69365120C7937384E3A337F02561D9232A54A4DA38FD830D**", "reqTyp":"s", "spotNm":"��ƾƽ����ֽ�ȸ��" }'; //������
 
 //  kindOfApi := 'reqDrvHst'; //����
-//  sRequest := '{"authKey": "0x0100000060D62AC87E7A9D69365120C7937384E3A337F02561D9232A54A4DA38FD830D10", "reqTyp":"i", "stDt":"2023-05-16 15:13:18", "edDt":"2023-05-16 16:52:42", "carId":"68217" }'; //�������
+//  sRequest := '{"authKey": "0x0100000060D62AC87E7A9D69365120C7937384E3A337F02561D9232A54A4DA38FD830D**", "reqTyp":"i", "stDt":"2023-05-16 15:13:18", "edDt":"2023-05-16 16:52:42", "carId":"68217" }'; //�������
 
 //  kindOfApi := 'reqDrvGps';
-//  sRequest  := '{"authKey": "0x0100000060D62AC87E7A9D69365120C7937384E3A337F02561D9232A54A4DA38FD830D10", "drvId":"158343335" }';
+//  sRequest  := '{"authKey": "0x0100000060D62AC87E7A9D69365120C7937384E3A337F02561D9232A54A4DA38FD830D**", "drvId":"158343335" }';
 
 
   sUrl := 'https://lora-web.sksmartlink.com:447/cust/' + kindOfApi;
