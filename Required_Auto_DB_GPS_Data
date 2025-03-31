@@ -142,17 +142,17 @@ begin
   try
     IdSMTP.Host                         := 'smart.whoismail.net';
     IdSMTP.AuthenticationType           := atLogin;
-    IdSMTP.Username                     := 'tax@gimaek.kr';
-    IdSMTP.Password                     := 'gimaek^1204';
+    IdSMTP.Username                     := 'tax@gim***.kr';
+    IdSMTP.Password                     := 'gim***^1204';
     IdSMTP.Port                         := 25;
 
     idMessage.ContentType               :='multipart/mixed; charset=UTF-8';
     idMessage.Encoding                  := meMIME;
   //  MIME(Multipart Internet Mail Extensions) : �ϳ��� ���Ͼȿ� ��������,����,������,÷������ ���� ����Ÿ�� ��� �о� �ְ� �����ϴ� ���.
 
-    IdMessage.From.Address              := 'tax@gimaek.kr';        //�����»������.
-    IdMessage.From.Name                 := 'GIMAEK';               //�����»��.
-    IdMessage.Recipients.EMailAddresses := 'audi799@gimaek.net';   //�޴»��(����).
+    IdMessage.From.Address              := 'tax@gim***.kr';        //�����»������.
+    IdMessage.From.Name                 := 'GIM***';               //�����»��.
+    IdMessage.Recipients.EMailAddresses := 'audi799@gim***.net';   //�޴»��(����).
 
     IdMessage.Body.Text                 := WideString(errorTItle);
     IdMessage.Subject                   := WideString(errorTItle);
